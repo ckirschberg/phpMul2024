@@ -40,15 +40,29 @@
         $input = (array) json_decode(file_get_contents('php://input'), true);
         // echo json_encode($input);
 
-        $data = [
-            'name' => $input['name'],
-            'color' => $input['color']
-       ];
+        // kun gør følgende hvis $input['name'] er udfyldt OG ikke er tom
+        if (isset($input['name']) && trim($input['name'], " ") != "") {
+            if (isset($input['color']) && trim($input['color'], " ") != "") { // server side validering
+                $data = [
+                    'name' => $input['name'],
+                    'color' => $input['color']
+                ];
+        
+                $sql = 'INSERT INTO cats VALUES(default, :name, :color)';
+                $statement = $conn->prepare($sql);
+                $statement->execute($data);
 
-       // kun gør følgende hvis $input['name'] er udfyldt OG ikke er tom
-        $sql = 'INSERT INTO cats VALUES(default, :name, :color)';
-        $statement = $conn->prepare($sql);
-        $statement->execute($data);
+                $id = $conn->lastInsertId();
+                $cat = (object) $input;
+                $cat->id = $id;
+                echo json_encode($cat);
+            }
+            else {
+                echo json_encode(["error" => "Missing color"]);
+            }
+       } else {
+           echo json_encode(["error" => "Missing name"]);
+       }
         // kun gør ovenstående hvis $input['name'] er udfyldt OG ikke er tom
 
     }
